@@ -8,10 +8,10 @@ from cryptography.fernet import Fernet
 from re import compile
 from random import choice
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+from math import ceil
 
 from .types import Prompt
-from .models import Tasks
 
 if TYPE_CHECKING:
     from openai.types.chat.chat_completion import ChatCompletion
@@ -46,7 +46,7 @@ def get_fernet_client() -> Fernet:
     return Fernet(settings.CRYPTO_KEY)
 
 
-async def send_prompt(messages: list[Prompt, ...] | Prompt) -> 'ChatCompletion' | None:
+async def send_prompt(messages: list[Prompt, ...] | Prompt) -> Optional['ChatCompletion']:
     """
     Sends a request to ChatGPT
 
@@ -57,7 +57,7 @@ async def send_prompt(messages: list[Prompt, ...] | Prompt) -> 'ChatCompletion' 
     system_prompts = get_system_prompts()
 
     if isinstance(messages, Prompt):
-        messages = (messages,)
+        messages = [messages, ]
 
     prompts = system_prompts + messages
 
@@ -68,7 +68,8 @@ async def send_prompt(messages: list[Prompt, ...] | Prompt) -> 'ChatCompletion' 
             model='gpt-3.5-turbo',
             messages=[x.model_dump() for x in prompts],
         )
-    except APIError:
+    except APIError as api_error:
+        print(api_error)
         response = None
 
     return response
@@ -80,21 +81,17 @@ def handle_chatgpt_answer(raw_text: str) -> str:
     status = DIFFICULTY_REGEX.search(raw_text)
 
     if status is None:
-        return choice([
-            Tasks.Difficulty.HARD,
-            Tasks.Difficulty.NORMAL,
-            Tasks.Difficulty.EASY,
-        ])
+        return choice(['hard', 'normal', 'easy'])
 
     status = status.group(0)
 
     match status:
         case 'hard':
-            return Tasks.Difficulty.HARD
+            return 'hard'
         case 'normal':
-            return Tasks.Difficulty.NORMAL
+            return 'normal'
         case 'easy':
-            return Tasks.Difficulty.EASY
+            return 'easy'
 
 
 async def get_difficulty(text: str) -> str:
@@ -112,12 +109,8 @@ async def get_difficulty(text: str) -> str:
         Prompt(role='user', content=f'Оцени сложность этого задания используя лишь три понятия (EASY, NORMAL, HARD) и дай ответ мне одним словом: {text}'),
     )
 
-    if not response.choices:
-        return choice([
-            Tasks.Difficulty.EASY,
-            Tasks.Difficulty.NORMAL,
-            Tasks.Difficulty.HARD,
-        ])
+    if not response or not response.choices:
+        return choice(['hard', 'normal', 'easy'])
 
     answer = response.choices[0].message.content
 
@@ -138,3 +131,33 @@ def calculate_experience(
     experience = max_experience - (hours - range_start) // ((range_end - range_start) / (max_experience - 1))
 
     return max(1, experience)
+
+
+def pagination(
+    objects_count: int,
+    start: int | None = None,
+    end: int | None = None,
+    max_objects_in_page: int = 5,
+) -> tuple[int]:
+    ''' A function for calculating pagination by the number of objects '''
+
+    page_count = ceil(objects_count / max_objects_in_page)
+
+    pagination_start = 0 if objects_count - max_objects_in_page < 0 else objects_count - max_objects_in_page
+    pagination_end = objects_count
+
+    if start is not None:
+        pagination_start = start
+
+    if end is not None:
+        pagination_end = end
+
+    if pagination_end > objects_count:
+        pagination_end = objects_count
+
+    if pagination_start < 0:
+        pagination_start = 0
+
+    page = ((page_count - ceil(pagination_end / max_objects_in_page)) + 1) if page_count > 0 else 0
+
+    return (page, pagination_start, pagination_end, page_count)

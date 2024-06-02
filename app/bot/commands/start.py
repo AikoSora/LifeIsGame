@@ -20,6 +20,8 @@ router = Router(__name__)
 
 
 async def __start(user: User):
+    ''' Function to send start message '''
+
     await user.reply(
         text=Start.START_MESSAGE,
         reply_markup=IKM(
@@ -36,6 +38,8 @@ async def __edit_text(
     payload: str,
     keyboard_text: str = 'Далее',
 ):
+    ''' Function to edit message '''
+
     processed_text = '\n'.join(text) if isinstance(text, list) else text
 
     await event.message.edit_text(

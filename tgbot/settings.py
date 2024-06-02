@@ -159,3 +159,5 @@ STATIC_URL = '/static/'
 # Telegram Bot - Settings
 API_TOKEN = os.getenv('API_TOKEN')
 TEST_MODE = bool(int(os.getenv('IS_TEST_MODE_ENABLED', '0')))
+CRYPTO_KEY = os.getenv('CRYPTO_KEY')
+OPENAI_TOKEN = os.getenv("OPENAI_TOKEN")

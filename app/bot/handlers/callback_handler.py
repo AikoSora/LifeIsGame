@@ -40,9 +40,3 @@ class CallBackHandler(BaseEventHandler):
                         show_alert=True
                     )
                 break
-        else:
-            await object.answer_callback_query(
-                callback_query_id=object.id,
-                text='❌ Неизвестный запрос',
-                show_alert=True
-            )

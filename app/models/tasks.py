@@ -1,8 +1,9 @@
 from django.db import models
 from .base import User
+from app.bot.middlewares.tasks.mixin import TaskMixin
 
 
-class Tasks(models.Model):
+class Tasks(models.Model, TaskMixin):
 
     class Difficulty(models.TextChoices):
         EASY = 'easy'
@@ -35,6 +36,3 @@ class Tasks(models.Model):
     completed_at = models.DateTimeField(default=None, null=True)
 
     is_active = models.BooleanField(default=True)
-
-    def __str__(self) -> str:
-        return self.title
