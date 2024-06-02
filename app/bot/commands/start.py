@@ -5,46 +5,171 @@ from aiogram.types import (
 
 from app.bot.router import Router
 from app.models import User
+from app.text import Start
 
-from asyncio import sleep
+from typing import TYPE_CHECKING
 
-from time import time
+from asyncio import create_task
+
+if TYPE_CHECKING:
+    from aiogram import Bot
+    from aiogram.types import Message, CallbackQuery
 
 
 router = Router(__name__)
 
 
-async def start(object, user, callback, language):
-    if callback:
-        text = "Привет!" if language == "ru" else "Hello!"
-        language = "ru" if language == "en" else "en"
+async def __start(user: User):
+    await user.reply(
+        text=Start.START_MESSAGE,
+        reply_markup=IKM(
+            inline_keyboard=[
+                [IKB(text='Да!', callback_data='continue')],
+            ]
+        )
+    )
 
-        await object.message.edit_text(f"{text} {time()}", reply_markup=IKM(inline_keyboard=[
-            [IKB(text=f'{language.upper()}', callback_data=f'playboy {language}')],
-        ]))
-    else:
-        await user.reply(f"Привет! {time()}", reply_markup=IKM(inline_keyboard=[
-            [IKB(text='EN', callback_data="playboy en")],
-        ]))
+
+async def __edit_text(
+    event: 'CallbackQuery',
+    text: str | list,
+    payload: str,
+    keyboard_text: str = 'Далее',
+):
+    processed_text = '\n'.join(text) if isinstance(text, list) else text
+
+    await event.message.edit_text(
+        text=processed_text,
+        reply_markup=IKM(inline_keyboard=[
+            [
+                IKB(
+                    text=keyboard_text,
+                    callback_data=payload
+                )
+            ]
+        ])
+    )
 
 
 @router.message(names='/start', dialog=User.Dialog.START)
-async def _(message, path_args, user, bot):
-    await start(message, user, False, "")
+async def _(
+    message: 'Message',
+    path_args: list[str],
+    user: User,
+    bot: 'Bot'
+) -> None:
+    create_task(
+        __start(user)
+    )
 
 
-@router.message(names='/info', dialog=User.Dialog.START)
-async def test(message, path_args, user, bot):
-    await sleep(10)
-    await user.reply(f"info! {time()}")
+@router.callback(name='continue')
+async def _(
+    event: 'CallbackQuery',
+    path_args: list[str],
+    user: User,
+    bot: 'Bot'
+) -> None:
+    create_task(
+        __edit_text(
+            event=event,
+            text=Start.CONTINUE_STAGE_ZERO,
+            payload='continue_one',
+        )
+    )
 
 
-@router.message(names='', dialog=User.Dialog.START)
-async def _(message, path_args, user, bot):
-    await sleep(10)
-    await user.reply(f"Nothing! {time()}")
+@router.callback(name='continue_one')
+async def _(
+    event: 'CallbackQuery',
+    path_args: list[str],
+    user: User,
+    bot: 'Bot'
+) -> None:
+    create_task(
+        __edit_text(
+            event=event,
+            text=Start.CONTINUE_STAGE_ONE,
+            payload='continue_two',
+        )
+    )
 
 
-@router.callback(name="playboy")
-async def _(event, path_args, user, bot):
-    await start(event, user, True, path_args[-1])
+@router.callback(name='continue_two')
+async def _(
+    event: 'CallbackQuery',
+    path_args: list[str],
+    user: User,
+    bot: 'Bot'
+) -> None:
+    create_task(
+        __edit_text(
+            event=event,
+            text=Start.CONTINUE_STAGE_TWO,
+            payload='continue_three',
+        )
+    )
+
+
+@router.callback(name='continue_three')
+async def _(
+    event: 'CallbackQuery',
+    path_args: list[str],
+    user: User,
+    bot: 'Bot'
+) -> None:
+    create_task(
+        __edit_text(
+            event=event,
+            text=Start.CONTINUE_STAGE_THREE,
+            payload='continue_four',
+        )
+    )
+
+
+@router.callback(name='continue_four')
+async def _(
+    event: 'CallbackQuery',
+    path_args: list[str],
+    user: User,
+    bot: 'Bot'
+) -> None:
+    create_task(
+        __edit_text(
+            event=event,
+            text=Start.CONTINUE_STAGE_FOUR,
+            payload='continue_five',
+        )
+    )
+
+
+@router.callback(name='continue_five')
+async def _(
+    event: 'CallbackQuery',
+    path_args: list[str],
+    user: User,
+    bot: 'Bot'
+) -> None:
+    create_task(
+        __edit_text(
+            event=event,
+            text=Start.CONTINUE_STAGE_FIVE,
+            payload='continue_end',
+            keyboard_text='Готов',
+        )
+    )
+
+
+@router.callback(name='continue_end')
+async def _(
+    event: 'CallbackQuery',
+    path_args: list[str],
+    user: User,
+    bot: 'Bot'
+) -> None:
+    user.dialog = User.Dialog.DEFAULT
+
+    await event.message.delete()
+
+    await user.asave()
+    await user.return_menu()

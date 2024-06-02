@@ -42,10 +42,5 @@ class MessageHandler(BaseEventHandler):
                             parse_mode='HTML'
                         )
                     break
-            else:
-                await self.message.reply(
-                    "⚠️ Неизвестная команда. Напишите мне <b>«Меню»</b> и воспользуйтесь кнопками",
-                    parse_mode='HTML'
-                )
         else:
             await self.user.return_menu()

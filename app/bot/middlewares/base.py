@@ -37,16 +37,16 @@ class BaseMixin(object):
 
     def return_menu(self, text: str | None = None, **kwargs) -> _Message:
         if not text:
-            text = '🤖 Вы были возвращены в <b>главное меню.</b>'
+            text = 'Добро пожаловать в Life!'
 
         keyboard = RKM(keyboard=[
-            [KB(text="👤 Профиль"), KB(text="🎁 Бонус"), KB(text="👥 Друзья")],
-            [KB(text="🚊 ЖД"), KB(text="🔵 JCoins"), KB(text="🗂 Помощь")],
+            [KB(text='Задания'), KB(text='Рейтинг')],
+            [KB(text='Статистика')],
         ], resize_keyboard=True)
 
         return self.reply(
             text=text,
-            keyboard=keyboard,
+            reply_markup=keyboard,
             disable_web_page_preview=True,
             **kwargs
         )

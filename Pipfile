@@ -8,6 +8,7 @@ aiogram = "*"
 django = "*"
 python-dotenv = "*"
 openai = "*"
+cryptography = "*"
 
 [dev-packages]
 
